@@ -1,0 +1,90 @@
+function FileNamelblMLP_grpng2=Stage2Grpng(FileNamelblMLP_PksPost,FileNamelblMLP_grpng1,FileNameTimeStamp,NewTimeStamp,LblFeatVI,allowThreshVcl,allowThrshInst)
+
+    flag=0;
+    cnt_grp2=0;
+    StartPt=zeros(1,2);
+    nwItr=0;
+    
+        ObsPkArr=zeros(length(FileNamelblMLP_PksPost),2);
+        j_new1=1;
+        if isempty(ObsPkArr)~=1
+        while j_new1<=length(FileNamelblMLP_PksPost)+1 && sum(ObsPkArr(:,1)==FileNamelblMLP_PksPost(end,1))==0
+            if j_new1==1
+                flag=1;
+                j_new1=j_new1+2;
+                       
+            else
+                if j_new1<=length(FileNamelblMLP_PksPost)
+                    flag=0;
+                    [~,nzl1]=min(abs(FileNameTimeStamp-FileNamelblMLP_PksPost(j_new1-1,1)));
+                    [~,nzl2]=(min(abs(FileNameTimeStamp-FileNamelblMLP_PksPost(j_new1,1))));
+                    VocalSamples=sum(FileNamelblMLP_grpng1(nzl1:nzl2)==0);                      % non-taan Vocal betwn 2 adjacent taans
+                    
+                    if VocalSamples<=5
+                        [~,nzl1]=min(abs(NewTimeStamp-FileNamelblMLP_PksPost(j_new1-1,1)));
+                        [~,nzl2]=(min(abs(NewTimeStamp-FileNamelblMLP_PksPost(j_new1,1))));
+                        chk_arr=(LblFeatVI{i_new1}(nzl1:nzl2,1));                                                 % inst btwn 2 adjacent taans
+                        ChkAllCond=(sum(chk_arr==0)<=allowThrshInst);
+                        
+                    else
+                        ChkAllCond=VocalSamples<=allowThreshVcl;
+                    end
+                end
+                if j_new1>length(FileNamelblMLP_PksPost{i_new1}) && sum(ObsPkArr(:,1)==FileNamelblMLP_PksPost{i_new1}(end,1))==0   % for the last pair case
+                    nwItr=nwItr+2;
+                    if cnt_grp2==0
+                        ObsPkArr(nwItr-1:nwItr,:)=FileNamelblMLP_PksPost{i_new1}(j_new1-2:j_new1-1,:);
+                    else
+                        ObsPkArr(nwItr-1:nwItr,:)=[StartPt;FileNamelblMLP_PksPost{i_new1}(j_new1-1,:)];
+                    end
+                end
+            
+                if exist('ChkAllCond')~=0
+                if ChkAllCond && cnt_grp2==0
+                    cnt_grp2=cnt_grp2+1;
+                    StartPt=FileNamelblMLP_PksPost{i_new1}(j_new1-2,:);
+                    j_new1=j_new1+2;
+                
+                elseif ChkAllCond && cnt_grp2~=0
+                    j_new1=j_new1+2;
+            
+                elseif ~ChkAllCond && cnt_grp2~=0
+                    cnt_grp2=0;
+                    nwItr=nwItr+2;
+                    ObsPkArr(nwItr-1:nwItr,:)=[StartPt;FileNamelblMLP_PksPost{i_new1}(j_new1-1,:)];
+                    j_new1=j_new1+2;
+                elseif ~ChkAllCond && cnt_grp2==0
+                    nwItr=nwItr+2;
+                    ObsPkArr(nwItr-1:nwItr,:)=FileNamelblMLP_PksPost{i_new1}(j_new1-2:j_new1-1,:);
+                    j_new1=j_new1+2;
+                end
+                end
+            end
+        
+        end
+        
+        if j_new1>length(FileNamelblMLP_PksPost{i_new1}) && sum(ObsPkArr(:,1)==FileNamelblMLP_PksPost{i_new1}(end,1))==0   % for the last pair case
+            nwItr=nwItr+2;
+            ObsPkArr(nwItr-1:nwItr,:)=FileNamelblMLP_PksPost{i_new1}(end-1:end,:);
+        end
+        
+        if flag==1
+            flag=0;
+            cnt_grp2=0;
+            ObsPkArr=FileNamelblMLP_PksPost{i_new1};
+        end
+        
+        locNZ=find(ObsPkArr(:,2)~=0);
+        nzarr=ObsPkArr(locNZ,:);
+        FinalObsArr=unique(nzarr,'rows');
+        FileNamelblMLP_grpng2=FinalObsArr;
+        ObsPkArr=[];
+        cnt_grp2=0;
+        nwItr=0;
+        StartPt=zeros(1,2);
+        
+        else FileNamelblMLP_grpng2=[];
+        end
+        
+ 
+
